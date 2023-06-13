@@ -25,6 +25,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const usersCollection = client.db('sportAcademies').collection('user')
+        const classesCollection = client.db('sportAcademies').collection('classes')
 
         // Save user email and role in DB
         app.put('/users/:email', async (req, res) => {
@@ -40,7 +41,13 @@ async function run() {
             res.send(result)
         })
 
-
+        // Save a classes in database
+        app.post('/classes', async (req, res) => {
+            const classes = req.body
+            console.log(classes)
+            const result = await classesCollection.insertOne(classes)
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
