@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -62,6 +62,14 @@ async function run() {
             next();
         }
 
+
+
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray()
+            res.send(result)
+        })
+
+
         // Save user email and role in DB
         app.put('/users/:email', async (req, res) => {
             const email = req.params.email
@@ -76,13 +84,34 @@ async function run() {
             res.send(result)
         })
 
-        app.get('/users', verifyAdmin, verifyJWT, async (req, res) => {
-            const result = await usersCollection.find().toArray()
-            res.send(result)
+        app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ admin: false })
+            }
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { admin: user?.role === 'admin' }
+            res.send(result);
         })
 
 
+        app.patch('/users/admin/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role: 'admin'
+                },
+            };
 
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
         // app.get('/users/:email', async (req, res) => {
         //     const email = req.params.email
         //     const query = { email: email }
@@ -101,12 +130,12 @@ async function run() {
 
 
         // Get all classes
-        app.get('/classes', verifyJWT, async (req, res) => {
+        app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray()
             res.send(result)
         })
 
-        app.get("/classes/:email", verifyJWT, async (req, res) => {
+        app.get("/classes/:email", async (req, res) => {
             console.log(req.params.email);
             const classes = await classesCollection
                 .find({
@@ -118,7 +147,7 @@ async function run() {
 
 
         // Get a single room
-        app.get('/class/:email', verifyJWT, async (req, res) => {
+        app.get('/class/:email', async (req, res) => {
             const email = req.params.email
             const query = { 'email': email }
             const result = await classesCollection.find(query).toArray()
