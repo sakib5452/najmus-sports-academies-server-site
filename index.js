@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config()
 const app = express();
@@ -27,6 +28,14 @@ async function run() {
         const usersCollection = client.db('sportAcademies').collection('user')
         const classesCollection = client.db('sportAcademies').collection('classes')
 
+
+        app.post('/jwt', (req, res) => {
+            const user = req.body;
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+
+            res.send({ token })
+        })
+
         // Save user email and role in DB
         app.put('/users/:email', async (req, res) => {
             const email = req.params.email
@@ -40,6 +49,21 @@ async function run() {
             console.log(result)
             res.send(result)
         })
+
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray()
+            res.send(result)
+        })
+
+
+
+        // app.get('/users/:email', async (req, res) => {
+        //     const email = req.params.email
+        //     const query = { email: email }
+        //     const result = await usersCollection.findOne(query)
+        //     console.log(result)
+        //     res.send(result)
+        // })
 
         // Save a classes in database
         app.post('/classes', async (req, res) => {
@@ -65,6 +89,17 @@ async function run() {
                 .toArray();
             res.send(classes);
         });
+
+
+        // Get a single room
+        app.get('/class/:email', async (req, res) => {
+            const email = req.params.email
+            const query = { 'email': email }
+            const result = await classesCollection.find(query).toArray()
+
+            console.log(result)
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
