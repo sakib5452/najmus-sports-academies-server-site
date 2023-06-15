@@ -112,13 +112,64 @@ async function run() {
             res.send(result);
 
         })
-        // app.get('/users/:email', async (req, res) => {
-        //     const email = req.params.email
-        //     const query = { email: email }
-        //     const result = await usersCollection.findOne(query)
-        //     console.log(result)
-        //     res.send(result)
-        // })
+
+        app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ instructor: false })
+            }
+
+            const query = { email: email }
+            const user = await usersCollection.findOne(query);
+            const result = { instructor: user?.role === 'instructor' }
+            res.send(result);
+        })
+
+
+        app.patch('/users/instructor/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    role: 'instructor'
+                },
+            };
+
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
+        // classes Approved
+        app.get('/classes/approved/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ approved: false })
+            }
+
+            const query = { email: email }
+            const user = await classesCollection.findOne(query);
+            const result = { approved: user?.status === 'Approved' }
+            res.send(result);
+        })
+
+
+        app.patch('/classes/approved/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: 'Approved'
+                },
+            };
+
+            const result = await usersCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
 
         // Save a classes in database
         app.post('/classes', async (req, res) => {
@@ -143,6 +194,19 @@ async function run() {
                 })
                 .toArray();
             res.send(classes);
+        });
+
+
+        // instructor
+
+        app.get("/instructors", async (req, res) => {
+            // console.log(req.params.email);
+            const instructor = await usersCollection
+                .find({
+                    role: 'instructor',
+                })
+                .toArray();
+            res.send(instructor);
         });
 
 
