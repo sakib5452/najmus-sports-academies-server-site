@@ -44,6 +44,7 @@ async function run() {
         const classesCollection = client.db('sportAcademies').collection('classes')
 
 
+
         app.post('/jwt', (req, res) => {
             const user = req.body;
             const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
@@ -180,6 +181,8 @@ async function run() {
         })
 
 
+
+
         // Get all classes
         app.get('/classes', async (req, res) => {
             const result = await classesCollection.find().toArray()
@@ -208,6 +211,47 @@ async function run() {
         });
 
 
+        // classes selected
+        app.get('/classes/selected/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ selected: false })
+            }
+
+            const query = { email: email }
+            const user = await classesCollection.findOne(query);
+            const result = { selected: user?.selected === 'selected' }
+            res.send(result);
+        })
+
+
+        app.patch('/classes/selected/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    selected: 'Success'
+                },
+            };
+
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
+
+
+        app.get("/selected", async (req, res) => {
+            // console.log(req.params.email);
+            const approved = await classesCollection
+                .find({
+                    selected: 'Success',
+                })
+                .toArray();
+            res.send(approved);
+        });
+
         // instructor
 
         app.get("/instructors", async (req, res) => {
@@ -221,7 +265,6 @@ async function run() {
         });
 
 
-        // Get a single room
         app.get('/class/:email', async (req, res) => {
             const email = req.params.email
             const query = { 'email': email }
