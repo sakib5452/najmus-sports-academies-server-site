@@ -166,7 +166,7 @@ async function run() {
                 },
             };
 
-            const result = await usersCollection.updateOne(filter, updateDoc);
+            const result = await classesCollection.updateOne(filter, updateDoc);
             res.send(result);
 
         })
@@ -194,6 +194,17 @@ async function run() {
                 })
                 .toArray();
             res.send(classes);
+        });
+
+        // Approved classes
+        app.get("/approved", async (req, res) => {
+            // console.log(req.params.email);
+            const approved = await classesCollection
+                .find({
+                    status: 'Approved',
+                })
+                .toArray();
+            res.send(approved);
         });
 
 
