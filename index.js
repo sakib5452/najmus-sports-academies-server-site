@@ -338,7 +338,7 @@ async function run() {
         app.get('/class/:email', async (req, res) => {
             const email = req.params.email
             const query = { 'email': email }
-            const result = await classesCollection.find(query).toArray()
+            const result = await classesCollection.find(query).toArra()
 
             console.log(result)
             res.send(result)
