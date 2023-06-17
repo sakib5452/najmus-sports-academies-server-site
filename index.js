@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
+// const stripe = require('stripe')(process.env.PAYMENT_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 //middleware
@@ -42,6 +43,7 @@ async function run() {
     try {
         const usersCollection = client.db('sportAcademies').collection('user')
         const classesCollection = client.db('sportAcademies').collection('classes')
+        const selectedCollection = client.db('sportAcademies').collection('selected')
 
 
 
@@ -171,6 +173,35 @@ async function run() {
             res.send(result);
 
         })
+        // classes Deny
+        app.get('/classes/deny/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+
+            if (req.decoded.email !== email) {
+                res.send({ deny: false })
+            }
+
+            const query = { email: email }
+            const user = await classesCollection.findOne(query);
+            const result = { deny: user?.status === 'Deny' }
+            res.send(result);
+        })
+
+
+        app.patch('/classes/deny/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id);
+            const filter = { _id: new ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    status: 'Deny'
+                },
+            };
+
+            const result = await classesCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+        })
 
         // Save a classes in database
         app.post('/classes', async (req, res) => {
@@ -181,6 +212,22 @@ async function run() {
         })
 
 
+        // app.put('/classes/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const filter = { _id: new ObjectId(id) };
+        //     const updatedClasses = req.body;
+        //     console.log(updatedClasses);
+        //     const updateDoc = {
+        //         $set: {
+        //             status: updatedClasses.status,
+        //             name: updatedClasses.name,
+        //             price: updatedClasses.price,
+        //             seats: updatedClasses.seats
+        //         },
+        //     };
+        //     const result = await classesCollection.updateOne(filter, updateDoc, { new: true });
+        //     res.send(result);
+        // })
 
 
         // Get all classes
@@ -252,6 +299,29 @@ async function run() {
             res.send(approved);
         });
 
+        app.post('/addClass', async (req, res) => {
+            const addClass = req.body;
+            console.log(addClass)
+            const result = await selectedCollection.insertOne(addClass);
+            res.send(result)
+        })
+
+        app.get('/addClass', async (req, res) => {
+            const result = await selectedCollection.find().toArray()
+            res.send(result)
+        })
+
+
+        app.get("/addClass/:email", async (req, res) => {
+            console.log(req.params.email);
+            const selected = await selectedCollection
+                .find({
+                    email: req.params.email,
+                })
+                .toArray();
+            res.send(selected);
+        });
+
         // instructor
 
         app.get("/instructors", async (req, res) => {
@@ -273,6 +343,29 @@ async function run() {
             console.log(result)
             res.send(result)
         })
+
+
+        // create payment intent
+        // app.post("/create-payment-intent", async (req, res) => {
+        //     const { price } = req.body;
+
+        //     // Create a PaymentIntent with the order amount and currency
+        //     const amount = price * 100;
+        //     console.log('amount', amount);
+        //     const paymentIntent = await stripe.paymentIntents.create({
+        //         amount: amount,
+        //         currency: "usd",
+        //         payment_method_types: ['card']
+        //     });
+
+        //     res.send({
+        //         clientSecret: paymentIntent.client_secret,
+        //     });
+        // });
+
+
+
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
